@@ -2,7 +2,8 @@ import HomeContentServer from './components/HomeContentServer'
 
 async function getProducts() {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window === 'undefined' ? 'https://pulsebuy.nl' : '')
+    // In server component, use internal API route
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'
     const res = await fetch(`${baseUrl}/api/products`, {
       cache: 'no-store'
     })
