@@ -58,8 +58,8 @@ git push -u origin main
 
 ```
 # Stripe (Live Keys)
-STRIPE_SECRET_KEY=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
-STRIPE_PUBLISHABLE_KEY=pk_live_51SKhHaJ71wqmsjSCwdmYRhxUDxIzVqwIFyPIPREUKlG2kG156tUySntMemnfUtRYFixpHHQiM5u3J8Dvs3Xn3CMq00NzkNO5RD
+STRIPE_SECRET_KEY=sk_live_YOUR_KEY_HERE
+STRIPE_PUBLISHABLE_KEY=pk_live_YOUR_KEY_HERE
 
 # Database
 MONGODB_URI=mongodb+srv://tristenvanbronckhorst_db_user:fBZZ4MWCiTaIfvXW@pulsebuy.16bfkxt.mongodb.net/pulsebuy?retryWrites=true&w=majority
