@@ -43,16 +43,16 @@ export default function Sitemap() {
       priority: 0.7,
     },
     {
-      url: '/login',
+      url: '/deals',
       lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
+      changeFrequency: 'daily',
+      priority: 0.8,
     },
     {
-      url: '/register',
+      url: '/help',
       lastModified: new Date(),
       changeFrequency: 'monthly',
-      priority: 0.5,
+      priority: 0.6,
     },
   ]
 

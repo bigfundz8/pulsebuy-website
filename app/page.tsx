@@ -2,7 +2,8 @@ import HomeContentServer from './components/HomeContentServer'
 
 async function getProducts() {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/products`, {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window === 'undefined' ? 'https://pulsebuy.nl' : '')
+    const res = await fetch(`${baseUrl}/api/products`, {
       cache: 'no-store'
     })
     if (!res.ok) throw new Error('Failed to fetch products')
