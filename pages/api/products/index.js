@@ -53,21 +53,18 @@ export default async function handler(req, res) {
           .sort(sortObj)
           .skip(skip)
           .limit(parseInt(limit))
-          .populate('reviews.userId', 'firstName lastName')
           .lean(),
         Product.countDocuments(filter)
       ])
 
       res.status(200).json({
         success: true,
-        data: {
-          products,
-          pagination: {
-            current: parseInt(page),
-            pages: Math.ceil(total / parseInt(limit)),
-            total,
-            limit: parseInt(limit)
-          }
+        products,
+        pagination: {
+          current: parseInt(page),
+          pages: Math.ceil(total / parseInt(limit)),
+          total,
+          limit: parseInt(limit)
         }
       })
     } catch (error) {

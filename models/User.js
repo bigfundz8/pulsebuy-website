@@ -10,7 +10,9 @@ const UserSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: function() {
+      return this.role === 'admin' // Alleen vereist voor admin users
+    },
     minlength: 6
   },
   firstName: {

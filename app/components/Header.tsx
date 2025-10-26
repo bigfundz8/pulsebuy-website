@@ -3,9 +3,13 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ShoppingCart, Menu, X, User, Search } from 'lucide-react'
+import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { state: cartState } = useCart()
+  const { state: authState } = useAuth()
 
   return (
     <header className="bg-white shadow-lg sticky top-0 z-50">
@@ -49,15 +53,23 @@ export default function Header() {
 
           {/* Right side icons */}
           <div className="flex items-center space-x-4">
-            <button className="p-2 text-gray-700 hover:text-primary-600 transition-colors">
-              <User className="h-6 w-6" />
-            </button>
-            <button className="p-2 text-gray-700 hover:text-primary-600 transition-colors relative">
+            {authState.isAuthenticated ? (
+              <Link href="/profile" className="p-2 text-gray-700 hover:text-primary-600 transition-colors">
+                <User className="h-6 w-6" />
+              </Link>
+            ) : (
+              <Link href="/login" className="p-2 text-gray-700 hover:text-primary-600 transition-colors">
+                <User className="h-6 w-6" />
+              </Link>
+            )}
+            <Link href="/cart" className="p-2 text-gray-700 hover:text-primary-600 transition-colors relative">
               <ShoppingCart className="h-6 w-6" />
-              <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                0
-              </span>
-            </button>
+              {cartState.itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {cartState.itemCount}
+                </span>
+              )}
+            </Link>
             
             {/* Mobile menu button */}
             <button

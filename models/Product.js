@@ -103,6 +103,41 @@ const ProductSchema = new mongoose.Schema({
   sales: {
     type: Number,
     default: 0
+  },
+  // Shopify integratie velden
+  shopifyId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  shopifyVariantId: {
+    type: String
+  },
+  // Trending en analytics velden
+  trendingScore: {
+    type: Number,
+    default: 0
+  },
+  isTrending: {
+    type: Boolean,
+    default: false
+  },
+  lastUpdated: {
+    type: Date,
+    default: Date.now
+  },
+  // AliExpress integratie velden
+  aliexpressUrl: {
+    type: String
+  },
+  costPrice: {
+    type: Number,
+    min: 0
+  },
+  profitMargin: {
+    type: Number,
+    min: 0,
+    max: 100
   }
 }, {
   timestamps: true

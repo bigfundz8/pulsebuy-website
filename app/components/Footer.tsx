@@ -18,13 +18,13 @@ export default function Footer() {
               De snelste weg naar de nieuwste tech en lifestyle producten. Snelle levering, eerlijke prijzen, uitstekende service.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="https://facebook.com/pulsebuy" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="https://instagram.com/pulsebuy" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="https://twitter.com/pulsebuy" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
             </div>
@@ -47,11 +47,6 @@ export default function Footer() {
               <li>
                 <Link href="/deals" className="text-gray-400 hover:text-white transition-colors">
                   Aanbiedingen
-                </Link>
-              </li>
-              <li>
-                <Link href="/new" className="text-gray-400 hover:text-white transition-colors">
-                  Nieuwe Producten
                 </Link>
               </li>
             </ul>
@@ -88,18 +83,18 @@ export default function Footer() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Contact</h3>
             <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <Mail className="h-5 w-5 text-primary-400" />
-                <span className="text-gray-400">info@pulsebuy.nl</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Phone className="h-5 w-5 text-primary-400" />
-                <span className="text-gray-400">+31 6 12345678</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <MapPin className="h-5 w-5 text-primary-400" />
-                <span className="text-gray-400">Amsterdam, Nederland</span>
-              </div>
+                  <div className="flex items-center space-x-3">
+                    <Mail className="h-5 w-5 text-blue-400" />
+                    <a href="mailto:pulsebuy.store@gmail.com" className="text-gray-400 hover:text-white transition-colors">pulsebuy.store@gmail.com</a>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Phone className="h-5 w-5 text-blue-400" />
+                    <a href="tel:+31678912345" className="text-gray-400 hover:text-white transition-colors">+31 6 78912345</a>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="h-5 w-5 text-blue-400" />
+                    <span className="text-gray-400">Amsterdam, Nederland</span>
+                  </div>
             </div>
           </div>
         </div>

@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Block admin areas
+Disallow: /admin/
+Disallow: /api/
+
+# Block private areas
+Disallow: /profile/
+Disallow: /orders/
+
+# Allow important pages
+Allow: /products
+Allow: /categories
+Allow: /about
+Allow: /contact
+
+# Sitemap location
+Sitemap: ${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/sitemap.xml

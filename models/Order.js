@@ -9,7 +9,7 @@ const OrderSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false // Allow guest orders
   },
   items: [{
     product: {
@@ -51,7 +51,7 @@ const OrderSchema = new mongoose.Schema({
   payment: {
     method: {
       type: String,
-      enum: ['stripe', 'ideal', 'paypal'],
+      enum: ['stripe', 'ideal', 'paypal', 'card'],
       required: true
     },
     status: {
@@ -67,7 +67,7 @@ const OrderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'],
+    enum: ['pending', 'paid', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'],
     default: 'pending'
   },
   shipping: {
@@ -90,6 +90,15 @@ const OrderSchema = new mongoose.Schema({
     total: { type: Number, required: true }
   },
   notes: String,
+  dropshipStatus: {
+    type: String,
+    enum: ['pending', 'forwarded', 'shipped', 'completed', 'failed'],
+    default: 'pending'
+  },
+  dropshipInstructions: String,
+  dropshipCost: Number,
+  profit: Number,
+  profitMargin: Number,
   trackingEvents: [{
     status: String,
     message: String,
