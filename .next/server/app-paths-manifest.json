@@ -1,20 +1,3 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/about/page": "app/about/page.js",
-  "/categories/page": "app/categories/page.js",
-  "/contact/page": "app/contact/page.js",
-  "/cart/page": "app/cart/page.js",
-  "/checkout/success/page": "app/checkout/success/page.js",
-  "/checkout/page": "app/checkout/page.js",
-  "/deals/page": "app/deals/page.js",
-  "/dropshipping/page": "app/dropshipping/page.js",
-  "/help/page": "app/help/page.js",
-  "/page": "app/page.js",
-  "/privacy/page": "app/privacy/page.js",
-  "/shipping/page": "app/shipping/page.js",
-  "/size-guide/page": "app/size-guide/page.js",
-  "/track-order/page": "app/track-order/page.js",
-  "/terms/page": "app/terms/page.js",
-  "/products/page": "app/products/page.js",
-  "/cookies/page": "app/cookies/page.js"
+  "/cart/page": "app/cart/page.js"
 }
