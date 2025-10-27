@@ -1,4 +1,20 @@
 {
+  "/categories/page": "app/categories/page.js",
+  "/cart/page": "app/cart/page.js",
+  "/about/page": "app/about/page.js",
+  "/cookies/page": "app/cookies/page.js",
   "/_not-found/page": "app/_not-found/page.js",
-  "/cart/page": "app/cart/page.js"
+  "/checkout/success/page": "app/checkout/success/page.js",
+  "/page": "app/page.js",
+  "/checkout/page": "app/checkout/page.js",
+  "/privacy/page": "app/privacy/page.js",
+  "/dropshipping/page": "app/dropshipping/page.js",
+  "/deals/page": "app/deals/page.js",
+  "/help/page": "app/help/page.js",
+  "/contact/page": "app/contact/page.js",
+  "/shipping/page": "app/shipping/page.js",
+  "/size-guide/page": "app/size-guide/page.js",
+  "/products/page": "app/products/page.js",
+  "/track-order/page": "app/track-order/page.js",
+  "/terms/page": "app/terms/page.js"
 }
