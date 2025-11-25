@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { Elements, CardElement, useStripe, useElements, PaymentRequestButtonElement } from '@stripe/react-stripe-js'
 import { CreditCard, AlertCircle, CheckCircle } from 'lucide-react'
 
 // Stripe configuratie
@@ -18,6 +18,82 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
   const [success, setSuccess] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('ideal')
   const [selectedBank, setSelectedBank] = useState('ing')
+  const [paymentRequest, setPaymentRequest] = useState<any>(null)
+  const [canUseApplePay, setCanUseApplePay] = useState(false)
+
+  // Setup Apple Pay / Payment Request
+  useEffect(() => {
+    if (isTestMode || !stripe || !orderData?.totalAmount) return
+
+    const pr = stripe.paymentRequest({
+      country: 'NL',
+      currency: 'eur',
+      total: {
+        label: 'PulseBuy Bestelling',
+        amount: Math.round((orderData.totalAmount || 0) * 100),
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+      requestPayerPhone: true,
+    })
+
+    pr.canMakePayment().then((result: any) => {
+      if (result) {
+        setCanUseApplePay(true)
+        setPaymentRequest(pr)
+      }
+    })
+
+    pr.on('paymentmethod', async (ev: any) => {
+      try {
+        // Maak Payment Intent
+        const response = await fetch('/api/payments/create-intent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            items: orderData.items,
+            shippingAddress: orderData.shippingAddress,
+            totalAmount: orderData.totalAmount,
+            paymentMethod: 'apple_pay',
+          }),
+        })
+
+        const result = await response.json()
+        if (!result.success) {
+          ev.complete('fail')
+          throw new Error(result.error || 'Payment Intent kon niet worden aangemaakt')
+        }
+
+        const { clientSecret } = result.data
+
+        // Bevestig met Apple Pay
+        const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
+          clientSecret,
+          { payment_method: ev.paymentMethod.id },
+          { handleActions: false }
+        )
+
+        if (confirmError) {
+          ev.complete('fail')
+          setError(confirmError.message || 'Betaling gefaald')
+          onError?.(confirmError.message || 'Betaling gefaald')
+        } else {
+          ev.complete('success')
+          if (paymentIntent.status === 'succeeded') {
+            setSuccess(true)
+            onSuccess?.(paymentIntent)
+          }
+        }
+      } catch (error: any) {
+        ev.complete('fail')
+        const errorMessage = error instanceof Error ? error.message : 'Onbekende fout'
+        setError(errorMessage)
+        onError?.(errorMessage)
+      }
+    })
+  }, [stripe, orderData, isTestMode])
 
   const handlePayment = async () => {
     console.log('🚀 handlePayment called')
@@ -89,6 +165,9 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
           },
           return_url: `${window.location.origin}/checkout/success`,
         })
+      } else if (paymentMethod === 'apple_pay') {
+        // Apple Pay wordt afgehandeld via paymentRequest
+        return
       } else {
         const cardElement = elements.getElement(CardElement)
         if (!cardElement) {
@@ -138,6 +217,28 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
 
   return (
     <div className="space-y-6">
+      {/* Apple Pay Button (bovenaan als beschikbaar) */}
+      {canUseApplePay && paymentRequest && !isTestMode && (
+        <div className="mb-6">
+          <div className="bg-black rounded-xl p-4">
+            <PaymentRequestButtonElement
+              options={{
+                paymentRequest,
+                style: {
+                  paymentRequestButton: {
+                    theme: 'dark',
+                    height: '48px',
+                  },
+                },
+              }}
+            />
+          </div>
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-500">of</p>
+          </div>
+        </div>
+      )}
+
       {/* Payment Method Selection */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Betaalmethode</h3>
