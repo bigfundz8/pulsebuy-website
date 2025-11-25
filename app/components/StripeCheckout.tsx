@@ -23,8 +23,12 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
 
   // Setup Apple Pay / Payment Request
   useEffect(() => {
-    if (isTestMode || !stripe || !orderData?.totalAmount) return
+    if (isTestMode || !stripe || !orderData?.totalAmount) {
+      console.log('🍎 Apple Pay setup skipped:', { isTestMode, hasStripe: !!stripe, hasTotal: !!orderData?.totalAmount })
+      return
+    }
 
+    console.log('🍎 Setting up Apple Pay / Payment Request...')
     const pr = stripe.paymentRequest({
       country: 'NL',
       currency: 'eur',
@@ -38,10 +42,16 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
     })
 
     pr.canMakePayment().then((result: any) => {
+      console.log('🍎 canMakePayment result:', result)
       if (result) {
+        console.log('✅ Apple Pay is beschikbaar!')
         setCanUseApplePay(true)
         setPaymentRequest(pr)
+      } else {
+        console.log('❌ Apple Pay is niet beschikbaar op dit apparaat/browser')
       }
+    }).catch((error: any) => {
+      console.error('❌ Apple Pay check error:', error)
     })
 
     pr.on('paymentmethod', async (ev: any) => {
@@ -93,7 +103,12 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
         onError?.(errorMessage)
       }
     })
-  }, [stripe, orderData, isTestMode])
+
+    // Cleanup
+    return () => {
+      // Cleanup if needed
+    }
+  }, [stripe, orderData?.totalAmount, isTestMode, onSuccess, onError])
 
   const handlePayment = async () => {
     console.log('🚀 handlePayment called')
