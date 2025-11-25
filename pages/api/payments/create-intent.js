@@ -98,11 +98,22 @@ export default async function handler(req, res) {
       // Genereer ordernummer
       const orderNumber = `PB-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`
 
+      // Bepaal welke payment methods toegestaan zijn
+      // Apple Pay wordt alleen toegevoegd als het expliciet wordt aangevraagd
+      // Voor nu: alleen card en ideal (Apple Pay moet eerst worden geactiveerd in Stripe dashboard)
+      let allowedPaymentMethods = ['card', 'ideal']
+      
+      // Apple Pay tijdelijk uitgeschakeld totdat het is geactiveerd in Stripe dashboard
+      // Uncomment onderstaande regel als Apple Pay is geactiveerd in Stripe:
+      // if (paymentMethod === 'apple_pay') {
+      //   allowedPaymentMethods.push('apple_pay')
+      // }
+
       // Maak Stripe Payment Intent
       const paymentIntentOptions = {
         amount: Math.round(finalTotal * 100), // Stripe gebruikt centen
         currency: 'eur',
-        payment_method_types: ['card', 'ideal', 'apple_pay'], // Card, iDEAL en Apple Pay toegestaan
+        payment_method_types: allowedPaymentMethods, // Alleen card en ideal voor nu
         metadata: {
           orderNumber: orderNumber,
           customerEmail: (shippingAddress.email && shippingAddress.email.trim()) || (billingAddress?.email && billingAddress.email.trim()) || 'guest@example.com',
