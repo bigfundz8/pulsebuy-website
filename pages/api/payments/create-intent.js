@@ -102,7 +102,7 @@ export default async function handler(req, res) {
       const paymentIntentOptions = {
         amount: Math.round(finalTotal * 100), // Stripe gebruikt centen
         currency: 'eur',
-        payment_method_types: ['card'], // iDEAL tijdelijk uitgeschakeld totdat het is geactiveerd in Stripe dashboard
+        payment_method_types: ['card', 'ideal'], // Card en iDEAL beide toegestaan
         metadata: {
           orderNumber: orderNumber,
           customerEmail: (shippingAddress.email && shippingAddress.email.trim()) || (billingAddress?.email && billingAddress.email.trim()) || 'guest@example.com',
