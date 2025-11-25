@@ -21,14 +21,15 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
   const [paymentRequest, setPaymentRequest] = useState<any>(null)
   const [canUseApplePay, setCanUseApplePay] = useState(false)
 
-  // Setup Apple Pay / Payment Request
+  // Apple Pay / Payment Request tijdelijk uitgeschakeld
+  // Wordt alleen gebruikt als Apple Pay is geactiveerd in Stripe Dashboard
+  // Uncomment onderstaande code als Apple Pay is geactiveerd:
+  /*
   useEffect(() => {
     if (isTestMode || !stripe || !orderData?.totalAmount) {
-      console.log('🍎 Apple Pay setup skipped:', { isTestMode, hasStripe: !!stripe, hasTotal: !!orderData?.totalAmount })
       return
     }
 
-    console.log('🍎 Setting up Apple Pay / Payment Request...')
     const pr = stripe.paymentRequest({
       country: 'NL',
       currency: 'eur',
@@ -42,21 +43,14 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
     })
 
     pr.canMakePayment().then((result: any) => {
-      console.log('🍎 canMakePayment result:', result)
       if (result) {
-        console.log('✅ Apple Pay is beschikbaar!')
         setCanUseApplePay(true)
         setPaymentRequest(pr)
-      } else {
-        console.log('❌ Apple Pay is niet beschikbaar op dit apparaat/browser')
       }
-    }).catch((error: any) => {
-      console.error('❌ Apple Pay check error:', error)
     })
 
     pr.on('paymentmethod', async (ev: any) => {
       try {
-        // Maak Payment Intent
         const response = await fetch('/api/payments/create-intent', {
           method: 'POST',
           headers: {
@@ -77,8 +71,6 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
         }
 
         const { clientSecret } = result.data
-
-        // Bevestig met Apple Pay
         const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
           clientSecret,
           { payment_method: ev.paymentMethod.id },
@@ -103,12 +95,8 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
         onError?.(errorMessage)
       }
     })
-
-    // Cleanup
-    return () => {
-      // Cleanup if needed
-    }
   }, [stripe, orderData?.totalAmount, isTestMode, onSuccess, onError])
+  */
 
   const handlePayment = async () => {
     console.log('🚀 handlePayment called')
@@ -181,8 +169,8 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
           return_url: `${window.location.origin}/checkout/success`,
         })
       } else if (paymentMethod === 'apple_pay') {
-        // Apple Pay wordt afgehandeld via paymentRequest
-        return
+        // Apple Pay is tijdelijk uitgeschakeld
+        throw new Error('Apple Pay is momenteel niet beschikbaar')
       } else {
         const cardElement = elements.getElement(CardElement)
         if (!cardElement) {
