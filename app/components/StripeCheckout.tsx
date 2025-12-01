@@ -7,7 +7,10 @@ import { CreditCard, AlertCircle, CheckCircle } from 'lucide-react'
 
 // Stripe configuratie
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey).catch((error) => {
+  console.error('❌ Stripe load error:', error)
+  return null
+}) : null
 
 // StripeCheckoutForm component
 function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false }) {
@@ -20,6 +23,32 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
   const [selectedBank, setSelectedBank] = useState('ing')
   const [paymentRequest, setPaymentRequest] = useState<any>(null)
   const [canUseApplePay, setCanUseApplePay] = useState(false)
+  const [stripeReady, setStripeReady] = useState(false)
+
+  // Check of Stripe correct is geladen
+  useEffect(() => {
+    if (isTestMode) {
+      setStripeReady(true)
+      return
+    }
+
+    if (stripe && elements) {
+      console.log('✅ Stripe en Elements zijn geladen')
+      setStripeReady(true)
+      setError(null)
+    } else {
+      console.log('⏳ Wachten op Stripe...', { stripe: !!stripe, elements: !!elements })
+      // Wacht even en check opnieuw
+      const timer = setTimeout(() => {
+        if (!stripe || !elements) {
+          console.error('❌ Stripe kon niet worden geladen na 3 seconden')
+          setError('Stripe kon niet worden geladen. Controleer je internetverbinding en probeer het opnieuw. Als het probleem aanhoudt, controleer of NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY correct is ingesteld.')
+          setStripeReady(false)
+        }
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [stripe, elements, isTestMode])
 
   // Apple Pay / Payment Request tijdelijk uitgeschakeld
   // Wordt alleen gebruikt als Apple Pay is geactiveerd in Stripe Dashboard
@@ -147,11 +176,23 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
         }),
       })
 
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ Payment intent API error:', response.status, errorText)
+        throw new Error(`API error: ${response.status} - ${errorText}`)
+      }
+
       const result = await response.json()
       console.log('💳 Payment intent response:', result)
 
       if (!result.success) {
-        throw new Error(result.error || 'Payment Intent kon niet worden aangemaakt')
+        console.error('❌ Payment intent failed:', result.error)
+        throw new Error(result.error || result.message || 'Payment Intent kon niet worden aangemaakt')
+      }
+
+      if (!result.data || !result.data.clientSecret) {
+        console.error('❌ No client secret in response:', result)
+        throw new Error('Geen client secret ontvangen van de server')
       }
 
       const { clientSecret } = result.data
@@ -200,7 +241,23 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
 
     } catch (error) {
       console.error('❌ Payment error:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Onbekende fout'
+      let errorMessage = 'Onbekende fout'
+      
+      if (error instanceof Error) {
+        errorMessage = error.message
+        // Verbeter error messages voor gebruiker
+        if (errorMessage.includes('Load failed') || errorMessage.includes('Failed to load')) {
+          errorMessage = 'Stripe kon niet worden geladen. Probeer de pagina te vernieuwen of controleer je internetverbinding.'
+        } else if (errorMessage.includes('API error')) {
+          errorMessage = 'Server error. Probeer het opnieuw of neem contact op met support.'
+        } else if (errorMessage.includes('Stripe niet geladen')) {
+          errorMessage = 'Stripe is nog niet geladen. Wacht even en probeer het opnieuw.'
+        }
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      }
+      
+      console.error('❌ Final error message:', errorMessage)
       setError(errorMessage)
       onError?.(errorMessage)
     } finally {
@@ -304,21 +361,39 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
       {paymentMethod === 'card' && !isTestMode && (
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Creditcard gegevens</h3>
-          <div className="p-4 border rounded-lg bg-gray-50">
-            <CardElement
-              options={{
-                style: {
-                  base: {
-                    fontSize: '16px',
-                    color: '#424770',
-                    '::placeholder': {
-                      color: '#aab7c4',
+          {!stripeReady ? (
+            <div className="p-4 border rounded-lg bg-gray-50">
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                  <p className="text-gray-600 text-sm">Stripe wordt geladen...</p>
+                </div>
+              </div>
+            </div>
+          ) : stripe && elements ? (
+            <div className="p-4 border rounded-lg bg-gray-50">
+              <CardElement
+                options={{
+                  style: {
+                    base: {
+                      fontSize: '16px',
+                      color: '#424770',
+                      '::placeholder': {
+                        color: '#aab7c4',
+                      },
                     },
                   },
-                },
-              }}
-            />
-          </div>
+                }}
+              />
+            </div>
+          ) : (
+            <div className="p-4 border rounded-lg bg-red-50">
+              <div className="flex items-center space-x-2 text-red-800">
+                <AlertCircle className="w-5 h-5" />
+                <span>Stripe kon niet worden geladen. Probeer de pagina te vernieuwen.</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -352,9 +427,9 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
       <div className="pt-6">
         <button
           onClick={handlePayment}
-          disabled={isProcessing}
+          disabled={isProcessing || (paymentMethod === 'card' && !isTestMode && (!stripeReady || !stripe || !elements))}
           className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-colors ${
-            isProcessing
+            isProcessing || (paymentMethod === 'card' && !isTestMode && (!stripeReady || !stripe || !elements))
               ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
               : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl'
           }`}
@@ -379,7 +454,7 @@ function StripeCheckoutForm({ orderData, onSuccess, onError, isTestMode = false 
 // Hoofdcomponent
 export default function StripeCheckout({ orderData, onSuccess, onError }) {
   console.log('🔍 StripeCheckout component loaded')
-  console.log('🔍 Stripe publishable key:', stripePublishableKey)
+  console.log('🔍 Stripe publishable key:', stripePublishableKey ? `${stripePublishableKey.substring(0, 20)}...` : 'NOT SET')
   console.log('🔍 Order data:', orderData)
   
   // Als er geen Stripe key is, render gewoon de form zonder Elements wrapper
@@ -388,9 +463,25 @@ export default function StripeCheckout({ orderData, onSuccess, onError }) {
     return <StripeCheckoutForm orderData={orderData} onSuccess={onSuccess} onError={onError} isTestMode={true} />
   }
 
+  // Check of stripePromise null is (als loadStripe is gefaald)
+  if (!stripePromise) {
+    console.error('❌ Stripe promise is null - Stripe kon niet worden geladen')
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-center space-x-2">
+          <AlertCircle className="w-5 h-5 text-red-500" />
+          <span className="text-red-800 font-medium">Stripe kon niet worden geladen</span>
+        </div>
+        <p className="text-red-700 mt-1">
+          Controleer of NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY correct is ingesteld in Railway.
+        </p>
+      </div>
+    )
+  }
+
   console.log('💳 Rendering in production mode')
   return (
-    <Elements stripe={stripePromise}>
+    <Elements stripe={stripePromise} options={{ locale: 'nl' }}>
       <StripeCheckoutForm orderData={orderData} onSuccess={onSuccess} onError={onError} isTestMode={false} />
     </Elements>
   )
