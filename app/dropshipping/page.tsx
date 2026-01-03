@@ -50,9 +50,23 @@ export default function DropshippingDashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
+  const [aliexpressAuthorized, setAliExpressAuthorized] = useState(false)
+  const [checkingAliExpress, setCheckingAliExpress] = useState(true)
 
   useEffect(() => {
     checkAuthentication()
+    checkAliExpressAuth()
+    
+    // Check URL voor success parameter
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      if (urlParams.get('aliexpress_auth') === 'success') {
+        alert('✅ AliExpress API succesvol geautoriseerd!')
+        // Clean URL
+        window.history.replaceState({}, '', '/dropshipping')
+        checkAliExpressAuth()
+      }
+    }
   }, [])
 
   const checkAuthentication = () => {
@@ -97,6 +111,39 @@ export default function DropshippingDashboard() {
       console.error('Error fetching dashboard data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const checkAliExpressAuth = async () => {
+    try {
+      setCheckingAliExpress(true)
+      const response = await fetch('/api/admin/aliexpress-status')
+      const data = await response.json()
+      setAliExpressAuthorized(data.authorized || false)
+    } catch (error) {
+      console.error('Error checking AliExpress auth:', error)
+      setAliExpressAuthorized(false)
+    } finally {
+      setCheckingAliExpress(false)
+    }
+  }
+
+  const authorizeAliExpress = async () => {
+    try {
+      setActionLoading('authorize')
+      const response = await fetch('/api/aliexpress/authorize')
+      const data = await response.json()
+      
+      if (data.success && data.data.authUrl) {
+        // Open OAuth URL in nieuwe tab
+        window.open(data.data.authUrl, '_blank')
+      } else {
+        alert('❌ Kon OAuth URL niet genereren: ' + (data.message || 'Onbekende error'))
+      }
+    } catch (error) {
+      alert('❌ Error: ' + error)
+    } finally {
+      setActionLoading(null)
     }
   }
 
@@ -685,6 +732,44 @@ export default function DropshippingDashboard() {
             📈 Import Trending
           </button>
         </div>
+
+        {/* AliExpress Authorization */}
+        {!aliexpressAuthorized && (
+          <div className="mb-8 p-6 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border-2 border-orange-300">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex-1 min-w-[300px]">
+                <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center">
+                  <Lock className="h-5 w-5 mr-2 text-orange-600" />
+                  AliExpress API Autorisatie Vereist
+                </h2>
+                <p className="text-gray-600">
+                  Je moet eerst AliExpress API autoriseren voordat je producten kunt importeren of orders kunt doorsturen.
+                </p>
+              </div>
+              <button
+                onClick={authorizeAliExpress}
+                disabled={actionLoading === 'authorize' || checkingAliExpress}
+                className="flex items-center px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg font-semibold whitespace-nowrap"
+              >
+                {actionLoading === 'authorize' || checkingAliExpress ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                ) : (
+                  <ExternalLink className="h-5 w-5 mr-2" />
+                )}
+                Autoriseer AliExpress
+              </button>
+            </div>
+          </div>
+        )}
+
+        {aliexpressAuthorized && (
+          <div className="mb-8 p-4 bg-green-50 rounded-xl border border-green-200">
+            <div className="flex items-center">
+              <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+              <span className="text-green-800 font-semibold">✅ AliExpress API is geautoriseerd</span>
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
