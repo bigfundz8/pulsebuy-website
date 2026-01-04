@@ -27,25 +27,63 @@ export default async function handler(req, res) {
       const tokenData = await exchangeCodeForToken(code)
 
       console.log('✅ Access token succesvol verkregen')
-      console.log('📝 Token expires in:', tokenData.expiresIn, 'seconds')
+      console.log('📝 Token data:', {
+        hasAccessToken: !!tokenData.accessToken,
+        hasRefreshToken: !!tokenData.refreshToken,
+        expiresIn: tokenData.expiresIn,
+        tokenType: tokenData.tokenType
+      })
 
       // Opslaan van de tokens in de database (bij de admin user)
       const adminUser = await User.findOne({ role: 'admin' })
 
+      console.log('🔍 Debug - Admin user gevonden voor token opslag:', adminUser ? '✅ Ja' : '❌ Nee')
       if (adminUser) {
-        adminUser.aliexpress = {
-          accessToken: tokenData.accessToken,
-          refreshToken: tokenData.refreshToken,
-          expiresIn: tokenData.expiresIn,
-          tokenType: tokenData.tokenType,
-          lastRefresh: new Date(),
-          expiresAt: new Date(Date.now() + tokenData.expiresIn * 1000)
-        }
+        console.log('🔍 Debug - Admin user email:', adminUser.email)
+        console.log('🔍 Debug - Admin user ID:', adminUser._id)
+      }
+
+      if (!adminUser) {
+        console.error('❌ Geen admin user gevonden om AliExpress tokens op te slaan.')
+        return res.redirect(302, `/dropshipping?aliexpress_auth=error&message=${encodeURIComponent('Geen admin user gevonden. Maak eerst een admin account aan.')}`)
+      }
+
+      // Bereken expiresAt (fallback naar 3600 seconden als expiresIn undefined is)
+      const expiresInSeconds = tokenData.expiresIn || 3600
+      const expiresAt = new Date(Date.now() + expiresInSeconds * 1000)
+
+      console.log('🔍 Debug - Token opslag data:', {
+        hasAccessToken: !!tokenData.accessToken,
+        hasRefreshToken: !!tokenData.refreshToken,
+        expiresIn: expiresInSeconds,
+        expiresAt: expiresAt.toISOString()
+      })
+
+      // Update admin user met tokens
+      adminUser.aliexpress = {
+        accessToken: tokenData.accessToken,
+        refreshToken: tokenData.refreshToken,
+        expiresIn: expiresInSeconds,
+        tokenType: tokenData.tokenType || 'Bearer',
+        lastRefresh: new Date(),
+        expiresAt: expiresAt
+      }
+
+      try {
         await adminUser.save()
         console.log('✅ AliExpress tokens opgeslagen voor admin user')
-      } else {
-        console.warn('⚠️ Geen admin user gevonden om AliExpress tokens op te slaan.')
-        // Als er geen admin user is, sla het op in een config document of maak een admin user aan
+        
+        // Verifieer dat tokens zijn opgeslagen
+        const verifyUser = await User.findById(adminUser._id)
+        console.log('🔍 Debug - Verificatie na opslag:', {
+          hasAliExpress: !!verifyUser.aliexpress,
+          hasAccessToken: !!verifyUser.aliexpress?.accessToken,
+          hasRefreshToken: !!verifyUser.aliexpress?.refreshToken,
+          expiresAt: verifyUser.aliexpress?.expiresAt
+        })
+      } catch (saveError) {
+        console.error('❌ Error bij opslaan tokens:', saveError)
+        return res.redirect(302, `/dropshipping?aliexpress_auth=error&message=${encodeURIComponent('Fout bij opslaan tokens: ' + saveError.message)}`)
       }
 
       // Redirect naar success pagina of dashboard
