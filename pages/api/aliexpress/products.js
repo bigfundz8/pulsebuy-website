@@ -16,7 +16,25 @@ export default async function handler(req, res) {
     // Haal admin user op met AliExpress tokens
     const adminUser = await User.findOne({ role: 'admin' })
 
-    if (!adminUser || !adminUser.aliexpress?.accessToken) {
+    console.log('🔍 Debug - Admin user gevonden:', adminUser ? '✅ Ja' : '❌ Nee')
+    
+    if (!adminUser) {
+      console.error('❌ Geen admin user gevonden in database')
+      return res.status(401).json({
+        success: false,
+        message: 'Geen admin user gevonden. Maak eerst een admin account aan.'
+      })
+    }
+
+    console.log('🔍 Debug - AliExpress tokens:', {
+      hasAliExpress: !!adminUser.aliexpress,
+      hasAccessToken: !!adminUser.aliexpress?.accessToken,
+      hasRefreshToken: !!adminUser.aliexpress?.refreshToken,
+      expiresAt: adminUser.aliexpress?.expiresAt
+    })
+
+    if (!adminUser.aliexpress?.accessToken) {
+      console.error('❌ Geen access token gevonden voor admin user')
       return res.status(401).json({
         success: false,
         message: 'AliExpress niet geautoriseerd. Ga naar /dropshipping om te autoriseren.'
