@@ -132,16 +132,30 @@ export default function DropshippingDashboard() {
     try {
       setActionLoading('authorize')
       const response = await fetch('/api/aliexpress/authorize')
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Network error' }))
+        throw new Error(errorData.message || `HTTP ${response.status}`)
+      }
+      
       const data = await response.json()
       
-      if (data.success && data.data.authUrl) {
-        // Open OAuth URL in nieuwe tab
-        window.open(data.data.authUrl, '_blank')
+      if (data.success && data.data && data.data.authUrl) {
+        // Valideer URL voordat we deze openen
+        try {
+          new URL(data.data.authUrl)
+          // Open OAuth URL in nieuwe tab
+          window.open(data.data.authUrl, '_blank')
+        } catch (urlError) {
+          throw new Error('Ongeldige OAuth URL ontvangen: ' + data.data.authUrl)
+        }
       } else {
-        alert('❌ Kon OAuth URL niet genereren: ' + (data.message || 'Onbekende error'))
+        throw new Error(data.message || 'Kon OAuth URL niet genereren')
       }
-    } catch (error) {
-      alert('❌ Error: ' + error)
+    } catch (error: any) {
+      console.error('❌ AliExpress authorization error:', error)
+      const errorMessage = error.message || 'Onbekende error tijdens autorisatie'
+      alert('❌ Error: ' + errorMessage + '\n\nCheck Railway environment variables:\n- ALIEXPRESS_APP_KEY\n- ALIEXPRESS_CALLBACK_URL')
     } finally {
       setActionLoading(null)
     }
@@ -736,28 +750,40 @@ export default function DropshippingDashboard() {
         {/* AliExpress Authorization */}
         {!aliexpressAuthorized && (
           <div className="mb-8 p-6 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border-2 border-orange-300">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex-1 min-w-[300px]">
+            <div className="flex flex-col gap-4">
+              <div className="flex-1">
                 <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center">
                   <Lock className="h-5 w-5 mr-2 text-orange-600" />
                   AliExpress API Autorisatie Vereist
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-gray-600 mb-3">
                   Je moet eerst AliExpress API autoriseren voordat je producten kunt importeren of orders kunt doorsturen.
                 </p>
+                <p className="text-sm text-orange-700 bg-orange-100 p-3 rounded-lg mb-3">
+                  <strong>💡 Tip:</strong> Als je een server error krijgt, gebruik dan de "Apply Online in AliExpress" knop hieronder. Voor Test status apps werkt dit vaak beter.
+                </p>
               </div>
-              <button
-                onClick={authorizeAliExpress}
-                disabled={actionLoading === 'authorize' || checkingAliExpress}
-                className="flex items-center px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg font-semibold whitespace-nowrap"
-              >
-                {actionLoading === 'authorize' || checkingAliExpress ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                ) : (
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={authorizeAliExpress}
+                  disabled={actionLoading === 'authorize' || checkingAliExpress}
+                  className="flex items-center px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg font-semibold whitespace-nowrap"
+                >
+                  {actionLoading === 'authorize' || checkingAliExpress ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  ) : (
+                    <ExternalLink className="h-5 w-5 mr-2" />
+                  )}
+                  Autoriseer AliExpress
+                </button>
+                <button
+                  onClick={() => window.open('https://openservice.aliexpress.com/openapi/auth', '_blank')}
+                  className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-lg font-semibold whitespace-nowrap"
+                >
                   <ExternalLink className="h-5 w-5 mr-2" />
-                )}
-                Autoriseer AliExpress
-              </button>
+                  Apply Online in AliExpress
+                </button>
+              </div>
             </div>
           </div>
         )}
