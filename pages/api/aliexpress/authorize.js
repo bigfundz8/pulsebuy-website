@@ -46,8 +46,9 @@ export default async function handler(req, res) {
     }
 
     // Genereer OAuth authorization URL
+    // Volgens AliExpress documentatie: https://api-sg.aliexpress.com/oauth/authorize
     try {
-      const authUrl = new URL('https://oauth.aliexpress.com/authorize')
+      const authUrl = new URL('https://api-sg.aliexpress.com/oauth/authorize')
       
       // Valideer dat appKey een geldige string is voordat we het gebruiken
       const cleanAppKey = String(appKey).trim()
@@ -58,6 +59,7 @@ export default async function handler(req, res) {
       authUrl.searchParams.set('client_id', cleanAppKey)
       authUrl.searchParams.set('redirect_uri', callbackUrl)
       authUrl.searchParams.set('response_type', 'code')
+      authUrl.searchParams.set('force_auth', 'true') // Belangrijk: force auth volgens documentatie
       authUrl.searchParams.set('state', 'aliexpress_auth_' + Date.now())
 
       const finalUrl = authUrl.toString()
